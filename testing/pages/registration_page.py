@@ -1,103 +1,61 @@
-import time
-from selenium.common import TimeoutException
+"""Page Object for the Registration page"""
+
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
+
+from models.user import User
+from pages.base_page import BasePage
 
 
-class RegistrationPage:
+class RegistrationPage(BasePage):
+    """Encapsulates locators and actions for creating a new user account"""
+
+    # Locators specific to the Registration page
     LOGIN_LINK = (By.XPATH, "//a[text()='Log in']")
     REGISTRATION_LINK = (By.XPATH, "//a[text()='Click here']")
-    NAME = (By.NAME, "firstName")
-    LAST_NAME = (By.NAME, "lastName")
+    FIRST_NAME_INPUT = (By.NAME, "firstName")
+    LAST_NAME_INPUT = (By.NAME, "lastName")
     EMAIL_INPUT = (By.NAME, "username")
     PASSWORD_INPUT = (By.NAME, "password")
+    TERMS_OF_USE_CHECKBOX = (By.NAME, "termsOfUse")
     BUTTON_REGISTRATION = (By.CSS_SELECTOR, "button.btn.btn--primary")
-    TERMS_OF_USE = (By.NAME, "termsOfUse")
-    SIGN_OUT_BUTTON = (By.CSS_SELECTOR, "button.navigation-link.linklike")
-    MODAL_BOX = (By.CSS_SELECTOR, "div.modal-content")
-    MODAL_TITLE = (By.CSS_SELECTOR, "div.modal-content h3")
-    MODAL_TEXT = (By.CSS_SELECTOR, "div.modal-content p")
-    MODAL_OK_BUTTON = (By.CSS_SELECTOR, "div.modal-content button.btn--primary")
-    FIELD_ERROR = (By.CSS_SELECTOR, "div.error")
-    OK_BUTTON = (By.XPATH, "//*[text()='OK']")
-
-    def __init__(self, driver):
-        self.driver = driver
 
     def open_registration_page(self):
-        self.driver.find_element(*self.LOGIN_LINK).click()
-        self.driver.find_element(*self.REGISTRATION_LINK).click()
-        WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self.NAME)
-        )
+        """Navigates to the Registration form via the Login page"""
+        self.click(self.LOGIN_LINK)
+        self.click(self.REGISTRATION_LINK)
+        self.find(self.FIRST_NAME_INPUT)
 
-    def fill_name_field(self, name):
-        self.driver.find_element(*self.NAME).clear()
-        self.driver.find_element(*self.NAME).send_keys(name)
+    def fill_first_name_field(self, first_name: str):
+        """Enters first name into the First Name field"""
+        self.fill(self.FIRST_NAME_INPUT, first_name)
 
-    def full_last_name_field(self, last_name):
-        self.driver.find_element(*self.LAST_NAME).clear()
-        self.driver.find_element(*self.LAST_NAME).send_keys(last_name)
+    def fill_last_name_field(self, last_name: str):
+        """Enters last name into the Last Name field"""
+        self.fill(self.LAST_NAME_INPUT, last_name)
 
-    def fill_email_field(self, email):
-        self.driver.find_element(*self.EMAIL_INPUT).clear()
-        self.driver.find_element(*self.EMAIL_INPUT).send_keys(email)
+    def fill_email_field(self, email: str):
+        """Enters email into the Email field"""
+        self.fill(self.EMAIL_INPUT, email)
 
-    def fill_password_field(self, password):
-        self.driver.find_element(*self.PASSWORD_INPUT).clear()
-        self.driver.find_element(*self.PASSWORD_INPUT).send_keys(password)
+    def fill_password_field(self, password: str):
+        """Enters password into the Password field"""
+        self.fill(self.PASSWORD_INPUT, password)
 
-    def fill_registration_form(self, user):
-        self.fill_name_field(user.first_name)
-        self.full_last_name_field(user.last_name)
+    def fill_registration_form(self, user: User):
+        """Fills all text fields of the registration form using a User model"""
+        self.fill_first_name_field(user.first_name)
+        self.fill_last_name_field(user.last_name)
         self.fill_email_field(user.email)
         self.fill_password_field(user.password)
 
     def click_on_terms_of_use(self):
-        self.driver.find_element(*self.TERMS_OF_USE).click()
+        """Checks the 'Terms of Use' agreement checkbox"""
+        self.click(self.TERMS_OF_USE_CHECKBOX)
 
     def click_on_registration_button(self):
-        self.driver.find_element(*self.BUTTON_REGISTRATION).click()
+        """Clicks the 'Y'alla!' registration submit button"""
+        self.click(self.BUTTON_REGISTRATION)
 
-    def confirmation1(self):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self.MODAL_TITLE)
-        )
-        return element.text
-
-    def confirmation2(self):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self.MODAL_TEXT)
-        )
-        return element.text
-
-    def close_window(self):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.element_to_be_clickable(self.MODAL_OK_BUTTON)
-        )
-        element.click()
-        WebDriverWait(self.driver, 10).until(
-            EC.invisibility_of_element_located(self.MODAL_BOX)
-        )
-
-    def is_sign_out_displayed(self):
-        try:
-            WebDriverWait(self.driver, timeout=15).until(
-                EC.visibility_of_element_located(self.SIGN_OUT_BUTTON)
-            )
-            return True
-        except TimeoutException:
-            return False
-
-    def get_field_error_text(self):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self.FIELD_ERROR)
-        )
-        return element.text
-
-    def submit_button_disabled(self):
-        element = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self.BUTTON_REGISTRATION)
-        )
-        return element.get_attribute("disabled") is not None
+    def is_submit_button_disabled(self) -> bool:
+        """Checks if the Registration submit button is currently disabled"""
+        return self.is_button_disabled(self.BUTTON_REGISTRATION)

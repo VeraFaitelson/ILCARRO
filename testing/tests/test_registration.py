@@ -1,125 +1,84 @@
-import uuid
-from models.user import User
+"""Tests for user registration functionality (positive and negative scenarios)"""
+
+from conftest import DEFAULT_USER
 from pages.registration_page import RegistrationPage
+from utils.data_generator import generate_user
+
+# Test data constants for negative scenarios
+INVALID_EMAIL = "testQAgmailcom"
+INVALID_PASSWORD = "test"
 
 
-# Сценарий 1: Успешная регистрация с корректными данными
-# Создание новой учетной записи при заполнении всех обязательных полей валидными значениями.
-# • Тест 1: test_valid_registration_success
-# • Шаги: Сгенерировать уникальный Email, заполнить поля Имя (First Name), Фамилия (Last Name),
-#   Email (Email), Пароль (Password), отметить чекбокс Условия использования (Terms of Use)
-#   и нажать кнопку Отправить (Y'alla!).
-# • Ожидаемый результат: Появляется модальное окно с заголовком «Registered» и текстом
-#   «You are logged in success». После закрытия окна отображается кнопка Выйти (Log out).
 def test_valid_registration_success(driver):
+    """Verify successful registration with valid user data"""
     registration_page = RegistrationPage(driver)
-    random_suffix = uuid.uuid4().hex[:8]
-    user = User(
-        "Vera",
-        "Ve",
-        f"testvera{random_suffix}@gmail.com",
-        "Vera!123456789@"
-    )
+    user = generate_user()
+
     registration_page.open_registration_page()
     registration_page.fill_registration_form(user)
     registration_page.click_on_terms_of_use()
     registration_page.click_on_registration_button()
-    assert registration_page.confirmation1() == "Registered"
-    assert registration_page.confirmation2() == "You are logged in success"
-    registration_page.close_window()
+
+    assert registration_page.get_modal_title() == "Registered"
+    assert registration_page.get_modal_text() == "You are logged in success"
+    registration_page.close_modal()
     assert registration_page.is_sign_out_displayed()
 
 
-# Сценарий 2: Неудачная регистрация при пустом поле Имя (First Name)
-# Проверка клиентской валидации обязательности заполнения имени пользователя.
-# • Тест 2: test_invalid_registration_with_empty_name
-# • Шаги: Оставить поле Имя (First Name) пустым (""), заполнить валидными данными Фамилию (Last Name),
-#   Email (Email), Пароль (Password) и отметить чекбокс Условия использования (Terms of Use).
-# • Ожидаемый результат: Под полем Имя (First Name) появляется ошибка «Name is required»,
-#   кнопка отправки формы (Y'alla!) остается неактивной (disabled).
 def test_invalid_registration_with_empty_name(driver):
+    """Verify validation error when 'First Name' field is left empty"""
     registration_page = RegistrationPage(driver)
-    random_suffix = uuid.uuid4().hex[:8]
-    user = User(
-        "",
-        "Ve",
-        f"testvera{random_suffix}@gmail.com",
-        "Vera!123456789@"
-    )
+    user = generate_user()
+    user.first_name = ""
+
     registration_page.open_registration_page()
     registration_page.fill_registration_form(user)
     registration_page.click_on_terms_of_use()
+
     assert registration_page.get_field_error_text() == "Name is required"
-    assert registration_page.submit_button_disabled()
+    assert registration_page.is_submit_button_disabled()
 
 
-# Сценарий 3: Неудачная регистрация из-за некорректного формата Email
-# Проверка клиентской валидации формата электронной почты при заполнении формы.
-# • Тест 3: test_registration_with_invalid_email_and_valid_password
-# • Шаги: Заполнить валидными данными Имя (First Name), Фамилию (Last Name) и Пароль (Password).
-#   В поле Email (Email) ввести адрес без символа @ («testveraf1gmail.com») и отметить чекбокс (Terms of Use).
-# • Ожидаемый результат: Кнопка отправки формы (Y'alla!) заблокирована (disabled),
-#   под полем Email (Email) отображается ошибка «Wrong email format».
 def test_registration_with_invalid_email_and_valid_password(driver):
+    """Verify validation error when email format is invalid"""
     registration_page = RegistrationPage(driver)
-    user = User(
-        "Vera",
-        "Ve",
-        "testveraf1gmail.com",
-        "Vera!123456789@"
-    )
+    user = generate_user()
+    user.email = INVALID_EMAIL
+
     registration_page.open_registration_page()
     registration_page.fill_registration_form(user)
     registration_page.click_on_terms_of_use()
-    assert registration_page.submit_button_disabled()
+
+    assert registration_page.is_submit_button_disabled()
     assert registration_page.get_field_error_text() == "Wrong email format"
     assert not registration_page.is_sign_out_displayed()
 
 
-# Сценарий 4: Неудачная регистрация из-за некорректного формата Пароля
-# Проверка клиентской валидации требований безопасности к паролю.
-# • Тест 4: test_registration_with_valid_email_and_invalid_password
-# • Шаги: Заполнить валидными данными Имя (First Name), Фамилию (Last Name) и Email (Email).
-#   В поле Пароль (Password) ввести слишком простой пароль («Vera») и отметить чекбокс (Terms of Use).
-# • Ожидаемый результат: Кнопка отправки формы (Y'alla!) заблокирована (disabled),
-#   под полем Пароль (Password) отображается ошибка валидации пароля.
 def test_registration_with_valid_email_and_invalid_password(driver):
+    """Verify validation error when password does not meet security requirements"""
     registration_page = RegistrationPage(driver)
-    random_suffix = uuid.uuid4().hex[:8]
-    user = User(
-        "Vera",
-        "Ve",
-        f"testvera{random_suffix}@gmail.com",
-        "Vera"
-    )
+    user = generate_user()
+    user.password = INVALID_PASSWORD
+
     registration_page.open_registration_page()
     registration_page.fill_registration_form(user)
     registration_page.click_on_terms_of_use()
-    assert registration_page.submit_button_disabled()
+
+    assert registration_page.is_submit_button_disabled()
     assert "password" in registration_page.get_field_error_text().lower()
     assert not registration_page.is_sign_out_displayed()
 
 
-# Сценарий 5: Неудачная регистрация с уже существующим Email
-# Проверка серверной обработки попытки повторной регистрации на занятый почтовый адрес.
-# • Тест 5: test_registration_with_already_exist_email
-# • Шаги: Заполнить форму валидными данными, указав в поле Email (Email) уже зарегистрированный адрес
-#   («testveraf@gmail.com»), отметить чекбокс (Terms of Use) и нажать кнопку (Y'alla!).
-# • Ожидаемый результат: Появляется модальное окно с заголовком «Registration failed» и текстом
-#   «"User already exists"». После закрытия окна кнопка Выйти (Log out) не отображается.
 def test_registration_with_already_exist_email(driver):
+    """Verify error modal appears when registering with an already registered email"""
     registration_page = RegistrationPage(driver)
-    user = User(
-        "Vera",
-        "Ve",
-        "testveraf@gmail.com",
-        "Vera!123456789@"
-    )
+
     registration_page.open_registration_page()
-    registration_page.fill_registration_form(user)
+    registration_page.fill_registration_form(DEFAULT_USER)
     registration_page.click_on_terms_of_use()
     registration_page.click_on_registration_button()
-    assert registration_page.confirmation1() == "Registration failed"
-    assert "User already exists" in registration_page.confirmation2()
-    registration_page.close_window()
+
+    assert registration_page.get_modal_title() == "Registration failed"
+    assert "User already exists" in registration_page.get_modal_text()
+    registration_page.close_modal()
     assert not registration_page.is_sign_out_displayed()

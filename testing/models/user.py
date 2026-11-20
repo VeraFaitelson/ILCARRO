@@ -1,6 +1,18 @@
+"""User data model for authorization and registration"""
+
+from dataclasses import dataclass
+
+
+@dataclass
 class User:
-    def __init__(self, first_name, last_name, email, password):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.password = password
+    """
+    Data model representing a user entity
+    @dataclass generates utility methods:
+    - __init__ (initialization of fields)
+    - __repr__ (string representation of an object)
+    - __eq__ (comparison of objects based on the values of their fields)
+    """
+    first_name: str
+    last_name: str
+    email: str
+    password: str
