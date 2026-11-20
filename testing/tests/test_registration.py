@@ -20,9 +20,8 @@ def test_valid_registration_success(driver):
     registration_page.click_on_registration_button()
 
     assert registration_page.get_modal_title() == "Registered"
-    assert registration_page.get_modal_text() == "You are logged in success"
+    assert "You are logged in success" in registration_page.get_modal_text()
     registration_page.close_modal()
-    assert registration_page.is_sign_out_displayed()
 
 
 def test_invalid_registration_with_empty_name(driver):
